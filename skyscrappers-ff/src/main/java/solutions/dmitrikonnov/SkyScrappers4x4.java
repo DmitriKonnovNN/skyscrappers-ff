@@ -1,53 +1,100 @@
 package solutions.dmitrikonnov;
 
 import java.util.Stack;
-
-import javax.naming.spi.DirStateFactory.Result;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class SkyScrappers4x4 {
 
-    int [][] skyScrprs = {{4,4},{3,4},{2,4}}; // 4 floors, 3 floors, 2 floors
+    int [][] skyScrprs = {  {4,4},
+                            {3,4},
+                            {2,4}}; // 4 floors, 3 floors, 2 floors
     int [][] grid = new int[6][6];
     Stack<Integer[]> stack = new Stack<>();
     final int gLength = grid.length;
     final int gDepth = grid[0].length;
+    final int MAX = 4;
+    static int invokeCounter = 0;
+    static boolean full = false;
 
     public int[][] solvePuzzle (int[] clues) {
+
         int i = 0;
         int k = 0;
         int j = 0;
 
+
         initGrid(clues, grid);
-        
         attemptToSet(i,j,k,grid);
+
 
         return format(grid);
 
     } 
 
-    private void attemptToSet(int i, int j, int k, int [][] grid){
+    protected void attemptToSet(int in, int jn, int kn, int [][] grid){
+        if(kn==3){full = true;}
+        if(full)return;
 
-        outer:
-        for (; k <skyScrprs[0].length; k++) {
-            // not sure about gDepth-1 down below.
-            inner:
-            for (; i < gDepth-1; i++){
-                for (; j < gLength; j++){
-                    if(isEdge(i, j)) continue;
-                        
-                    // вот здесь надо подумать хорошенько!
-                        boolean success = attemptToSet(i, j, grid, skyScrprs[k][0],k);
+        invokeCounter++;
+       System.out.println("invoked= " + invokeCounter + " in jn kn =" + in + jn + kn);
+
+
+        System.out.println("SK LENGTH= " + skyScrprs.length + " Kn before loop= " + kn);
+
+        /*for (int k = kn; k <skyScrprs.length; k++)*/
+
+        while(kn<skyScrprs.length){
+            int k = kn;
+            System.out.println("K= " +k);
+            for (int i = in; i < gDepth-1; i++){
+                for (int j = jn ; j < gLength; j++){
+                    if(full)return;
+
+                    if (isClue(i, j)) continue;
+
+                        boolean success = attemptSuccessful(i, j, grid, skyScrprs[k][0],k);
                         if (success) {
+                            if(full)return;
                             skyScrprs[k][1]-=1;
-                            if(skyScrprs[k][1]==0)continue outer;
-                            else continue inner;
+
+                            if(skyScrprs[k][1]==0){
+                                System.out.println("k1 = "+skyScrprs[k][1]);
+                                System.out.println("JUMP to the next TYPE: ijk= "+i+j+k);
+                                attemptToSet(0,0,k+1,grid);
+                            }
+                            if (skyScrprs[k][1]>0){
+                                System.out.println("k1 = "+skyScrprs[k][1]);
+                                System.out.println("CAAAAAAAAAAAAAAAAALL ijk= " +i+j+k);
+                                attemptToSet(i+1,j=1,k,grid);
+                            }
                         }
                         if (j== gLength-2){
-                            if(skyScrprs[k][1]==4)skyScrprs[k-1][1]+=1;
+                            if(full)return;
+                            if(skyScrprs[k][1]==4){
+                                //jumpBack(k-1);
+                              skyScrprs[k-1][1]+=1;
+                                Integer [] temp = stack.pop();
+                                grid[temp[0]][temp[1]]=temp[3];
+                                 if (temp[1]==4){
+                                skyScrprs[k][1]+=1;
+                                Integer [] temp1 = stack.pop();
+                                grid[temp1[0]][temp1[1]] = temp1[3];
+                                attemptToSet(temp1[0],temp1[1]+1,temp1[2],grid);
+                                 }
+                                attemptToSet(temp[0],temp[1]+1,temp[2],grid);
+                            }
+                            //jumpBack(k);
                             skyScrprs[k][1]+=1;
-                            Integer [] temp = stack.pop();
-                            grid[temp[0]+1][temp[1]]=temp[3];
-                            attemptToSet(temp[0],temp[1],temp[2],grid);
+                            Integer [] temp = stack.pop(); // i,j,k,previous value = succeeded attempt
+                            grid[temp[0]][temp[1]]=temp[3];
+                            if (temp[1]==4){
+                                skyScrprs[k][1]+=1;
+                                Integer [] temp1 = stack.pop();
+                                grid[temp1[0]][temp1[1]] = temp1[3];
+                                attemptToSet(temp1[0],temp1[1]+1,temp1[2],grid);
+                                }
+                            attemptToSet(temp[0],temp[1]+1,temp[2],grid);
                         }
                     
             }
@@ -55,17 +102,33 @@ public class SkyScrappers4x4 {
         }
         }
 
+        System.out.println("AFTER WHILE");
+
     }
 
-    private boolean attemptToSet(int i, int j, int [][] grid, int skyscpr, int k){
-        //boolean successfull = true;
-        if (grid[i+1][j]!=1) return false; // tryna figure out whether it's occupied;
-        //grid[i+1][j] = skyscpr;
+
+
+    private void jumpBack(int k){
+        skyScrprs[k][1]+=1;
+        Integer [] temp = stack.pop(); // i,j,k,previous value = succeeded attempt
+        grid[temp[0]][temp[1]]=temp[3];
+        if (temp[1]==4){
+           jumpBack(k);
+        }
+        attemptToSet(temp[0],temp[1]+1,temp[2],grid);
+    }
+
+    protected boolean attemptSuccessful(int i, int j, int [][] grid, int skyscpr, int k){
+    //    System.out.println("attemptToSet outerloop: i j k skyscrpr" + i+j+k+skyscpr);
+        if(isOccupied(i,j, grid)) return false;
         int [] sliceV = new int [gDepth];
         int [] sliceH = new int [gLength];
         //vertical check
         for (int v = 0; v < gDepth; v++){
-            if(v==i+1){sliceV[v]=skyscpr; continue;}
+
+            if(v==i){
+                sliceV[v]=skyscpr;
+                continue;}
             sliceV[v]=grid[v][j];
 
         }
@@ -74,19 +137,28 @@ public class SkyScrappers4x4 {
 
         //horizontal check
         for (int h = 0; h < gLength; h++){
-            if(h==j){sliceH[h]=skyscpr;continue;}
+            if(h==j){
+                sliceH[h]=skyscpr;
+                continue;}
             sliceH[h]=grid[i][h];
         }
         if (isDuplicated(skyscpr, sliceH)) return false;
         if (!isVisible(sliceH)) return false;
 
-        Integer[]stackFrame ={i,j,k,grid[i+1][j]};
+        Integer[]stackFrame ={i,j,k,grid[i][j]};
+        System.out.println("Stack size = "+stack.size());
         stack.push(stackFrame);
-        grid[i+1][j] = skyscpr;
+        grid[i][j] = skyscpr;
         return true;
     }
 
-    private void initGrid( int[] clues, int[][]grid){
+    protected boolean isOccupied(int i, int j, int [][] grid){
+
+        return grid[i][j]!=1;
+    }
+
+    protected void initGrid( int[] clues, int[][]grid){
+        System.out.println("void initGrid. clues= " + clues.toString() + " grid= " + grid.toString());
         for (int i = 0; i < gDepth; i++){
             for (int j = 0; j < gLength; j++)
             {
@@ -99,7 +171,7 @@ public class SkyScrappers4x4 {
         for (int i = 1; i<gDepth-1; i++) grid[i][gLength-1]=clues[counter++];
         for (int j = gLength-1-1; j>0; j--) grid[gDepth-1][j]=clues[counter++];
         for (int i = gDepth-1-1; i>0; i--) grid[i][0]=clues[counter++];
-
+        System.out.println("void initGrid finished");
     }
 
     // private boolean isCloseTo1 (int number, int [] line) {
@@ -110,51 +182,68 @@ public class SkyScrappers4x4 {
 
     // }
 
-    private boolean isDuplicated (int number, int [] line){
+    protected boolean isDuplicated (int number, int [] line){
+        int counter = 0;
         for (int i = 1; i< line.length-1; i++){
-            if (line[i]== number) return true;
+            if (line[i]== number) counter++;
         }
-        return false;
+        return counter > 1;
     }
 
-    private boolean isVisible (int[] line) {
+    protected boolean isVisible (int[] line) {
         int viewPoint1 = line[0];
         int viewPoint2 = line[line.length-1];
+
         int counter = 1;
-        boolean visible = false;
+        int unknown = 0;
         int temp = 0; // temorary highest point
-
-        for (int i = 2; i<line.length-1; i++){
-            if (temp == 0) temp = line[i-1];
-            if(line[i]>temp) {
-                temp = line[i];
-                counter++;
-            } 
+        if (viewPoint1 != 0) {
+            for (int i = 2; i<line.length-1; i++){
+                if (temp == 0) temp = line[i-1];
+                if (line[i]==temp){
+                    temp=line[i];
+                    unknown++;
+                    if(unknown<viewPoint1-1)counter++;
+                }
+                if(line[i]>temp) {
+                    temp = line[i];
+                    counter++;
+                }
+            }
+            if (counter!=viewPoint1)return false;
         }
-        if (counter==viewPoint1)visible =true; 
-        counter = 1; 
-        temp = 0; 
 
-        for (int i = line.length-3; i>0; i--){
-            if (temp == 0) temp = line[i+1];
-            if(line[i]>temp) {
-                temp = line[i];
-                counter++;
-            } 
+        if(viewPoint2 != 0){
+            counter = 1;
+            unknown = 0;
+            temp = 0;
+
+            for (int i = line.length-3; i>0; i--){
+                if (temp == 0) temp = line[i+1];
+                if (line[i]==temp){
+                    temp=line[i];
+                    unknown++;
+                    if(unknown<viewPoint2-1)counter++;
+                }
+                if(line[i]>temp) {
+                    temp = line[i];
+                    counter++;
+                }
+            }
+            if (counter!=viewPoint2)return false;
         }
-        if (counter==viewPoint2)visible = true; 
 
-        return visible; 
+
+        return true;
     }
 
 
-
-    private boolean isEdge(int i, int j){
-        
-        return i == 0 && j == 0 || i==0 && j==gLength-1 || i == gDepth-1 && j ==0 || i == gDepth-1 && j == gLength -1;
+    protected boolean isClue(int i, int j){
+        return i == 0 || i == gDepth-1 || j == 0 || j == gDepth-1;
     }
 
-    private void cutEdge(int [][]grid) {
+
+    protected void cutEdge(int [][]grid) {
         grid[0][0] = 0;
         grid[0][gLength-1]=0;
         grid[gDepth-1][0]=0;
@@ -162,7 +251,7 @@ public class SkyScrappers4x4 {
 
     }
 
-    private int[][] format(int [][] grid) {
+    protected int[][] format(int [][] grid) {
         int [][] result = new int [4][4];
         for (int i = 1; i<gDepth-1; i++){
             for(int j = 1; j<gLength-1;j++){
