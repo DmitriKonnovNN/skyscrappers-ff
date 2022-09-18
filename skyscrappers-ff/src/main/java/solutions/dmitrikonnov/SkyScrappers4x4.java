@@ -1,5 +1,6 @@
 package solutions.dmitrikonnov;
 
+import java.util.Arrays;
 import java.util.Stack;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -13,11 +14,13 @@ public class SkyScrappers4x4 {
     Stack<Integer[]> stack = new Stack<>();
     final int gLength = grid.length;
     final int gDepth = grid[0].length;
+    static int jtemp = 1;
     final int MAX = 4;
     static int invokeCounter = 0;
     static boolean full = false;
 
     public int[][] solvePuzzle (int[] clues) {
+
 
         int i = 0;
         int k = 0;
@@ -25,14 +28,51 @@ public class SkyScrappers4x4 {
 
 
         initGrid(clues, grid);
-        attemptToSet(i,j,k,grid);
+        attemptToSet(i,j,k,grid,skyScrprs);
 
 
         return format(grid);
 
-    } 
+    }
 
-    protected void attemptToSet(int in, int jn, int kn, int [][] grid){
+    protected boolean attemptToSet (int in, int jn, int kn, int [][] grid, int [][] skyScrprs){
+        int [][] skyScrprs1 = Arrays.stream(skyScrprs).map(int[]::clone).toArray(int[][]::new);
+        int[][]grid1 = Arrays.stream(grid).map(int[]::clone).toArray(int[][]::new);
+
+        boolean deepSuccess = true;
+
+
+
+        for (int k = kn; k <skyScrprs1.length; k++){
+            for (int i = in; i < gDepth-1; i++){
+                for (int j = deepSuccess==false ? jtemp : jn ; j < gLength; j++) {
+                    if (isClue(i, j)) continue;
+                    if(!deepSuccess){
+                        skyScrprs1 = Arrays.stream(skyScrprs).map(int[]::clone).toArray(int[][]::new);
+                        grid1 = Arrays.stream(grid).map(int[]::clone).toArray(int[][]::new);
+                        deepSuccess = true;
+
+                    }
+                    boolean success = attemptSuccessful(i, j, grid1, skyScrprs1[k][0],k);
+                    if (success){
+                        jtemp = j;
+                        grid1[i][j] = skyScrprs1[k][0];
+                        skyScrprs1[k][1]-=1;
+                        if(skyScrprs1[k][1]==0){
+                            deepSuccess = attemptToSet(0,0,k+1, grid1, skyScrprs1);
+                        }
+                        deepSuccess = attemptToSet(i+1,j=1,k,grid1, skyScrprs1);
+                    }
+                    if (j== gLength-2){
+                        return false;
+                    }
+
+                }}
+        }
+        return deepSuccess;
+    }
+
+    /*protected void attemptToSe1(int in, int jn, int kn, int [][] grid){
         if(kn==3){full = true;}
         if(full)return;
 
@@ -42,7 +82,7 @@ public class SkyScrappers4x4 {
 
         System.out.println("SK LENGTH= " + skyScrprs.length + " Kn before loop= " + kn);
 
-        /*for (int k = kn; k <skyScrprs.length; k++)*/
+        *//*for (int k = kn; k <skyScrprs.length; k++)*//*
 
         while(kn<skyScrprs.length){
             int k = kn;
@@ -104,11 +144,11 @@ public class SkyScrappers4x4 {
 
         System.out.println("AFTER WHILE");
 
-    }
+    }*/
 
 
 
-    private void jumpBack(int k){
+  /*  private void jumpBack(int k){
         skyScrprs[k][1]+=1;
         Integer [] temp = stack.pop(); // i,j,k,previous value = succeeded attempt
         grid[temp[0]][temp[1]]=temp[3];
@@ -116,7 +156,7 @@ public class SkyScrappers4x4 {
            jumpBack(k);
         }
         attemptToSet(temp[0],temp[1]+1,temp[2],grid);
-    }
+    }*/
 
     protected boolean attemptSuccessful(int i, int j, int [][] grid, int skyscpr, int k){
     //    System.out.println("attemptToSet outerloop: i j k skyscrpr" + i+j+k+skyscpr);
@@ -145,10 +185,10 @@ public class SkyScrappers4x4 {
         if (isDuplicated(skyscpr, sliceH)) return false;
         if (!isVisible(sliceH)) return false;
 
-        Integer[]stackFrame ={i,j,k,grid[i][j]};
-        System.out.println("Stack size = "+stack.size());
-        stack.push(stackFrame);
-        grid[i][j] = skyscpr;
+//        Integer[]stackFrame ={i,j,k,grid[i][j]};
+//        System.out.println("Stack size = "+stack.size());
+//        stack.push(stackFrame);
+
         return true;
     }
 
@@ -188,6 +228,45 @@ public class SkyScrappers4x4 {
             if (line[i]== number) counter++;
         }
         return counter > 1;
+    }
+
+    boolean isVisible1 (int[]line) {
+        int viewPoint1 = line[0];
+        int viewPoint2 = line[line.length-1];
+        int counter = 0;
+        int highest = 0;
+        int unkown = 0;
+        if (viewPoint1 != 0) {
+        for (int i = 1; i<line.length-1; i++){
+            if(highest==0) {highest = line[i];
+            counter++;}
+
+            if(line[i]>highest){
+                highest = line[i];
+                counter++;
+            }
+            if(line[i]==line[i+1]){
+                unkown++;
+            }
+        }
+            if (counter!=viewPoint1)return false;
+        }
+        if(viewPoint2 != 0){
+            counter = 0;
+            highest = 0;
+            for (int i = line.length-2; i>0; i--){
+                if(highest==0) {highest = line[i];
+                counter++;}
+                if(line[i]>highest){
+                    highest = line[i];
+                    counter++;
+                }
+            }
+            if (counter!=viewPoint2)return false;
+        }
+
+
+        return true;
     }
 
     protected boolean isVisible (int[] line) {

@@ -256,10 +256,46 @@ class SkyScrappers4x4Test {
         Assertions.assertEquals(exp, underTest.isVisible(line));
 
     }
+
+    @Test
+    void isVisible_assertTrue_if_1_7_1_1_6_1_1_1_3() {
+
+        int [] line = {1,7,1,1,6,1,1,1,1,3};
+        final boolean exp = true;
+        Assertions.assertEquals(exp,underTest.isVisible(line));
+        ArrayUtils.reverse(line);
+        Assertions.assertEquals(exp, underTest.isVisible(line));
+
+    }
+
+    @Test
+    void isVisible_assertTrue_if_1_1_1_1_7_1_1_1_3() {
+
+        int [] line = {1,1,1,1,7,1,1,1,1,3};
+        final boolean exp = true;
+        Assertions.assertEquals(exp,underTest.isVisible(line));
+        ArrayUtils.reverse(line);
+        Assertions.assertEquals(exp, underTest.isVisible(line));
+
+    }
+
+
+
+
     @Test
     void isVisible_assertTrue_if_3_1_1_4_1_2() {
 
         int [] line = {3,1,1,4,1,2};
+        final boolean exp = true;
+        Assertions.assertEquals(exp,underTest.isVisible(line));
+        ArrayUtils.reverse(line);
+        Assertions.assertEquals(exp, underTest.isVisible(line));
+
+    }
+    @Test
+    void isVisible_assertTrue_if_3_1_1_1_4_1() {
+
+        int [] line = {3,1,1,1,4,1};
         final boolean exp = true;
         Assertions.assertEquals(exp,underTest.isVisible(line));
         ArrayUtils.reverse(line);
